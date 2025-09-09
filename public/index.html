@@ -40,46 +40,57 @@
   </div>
 
   <script type="module">
-    import{sdk}from'https://unpkg.com/@farcaster/miniapp-sdk@0.1.0/dist/index.js';
-    window.FC=sdk;  const tgtBlock=913889;
-    document.getElementById('rnd').textContent=190;
-    document.getElementById('tgt').textContent=tgtBlock;
-    await FC.actions.ready();   // splash hidden
-    fetchLeaderboard();
+    // Import SDK FIRST
+    import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk@0.1.10';
+    window.FC = sdk;
 
-    async function submit(){
-      const g=+document.getElementById('guess').value;
-      if (!g||g<1000||g>10000) return alert('1000-10000 only');
-      let signedMsg=null;
-      try{ signedMsg=await window.FC.actions.signMessage({message:'predict'}); }catch{/*guest*/}
-      const res=await fetch('/api/predictions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({signedMessage:signedMsg,blockHeight:tgtBlock,guess:g})});
-      const j=await res.json(); if(j.error)return alert(j.error);
-      document.querySelector('.prediction-input').style.display='none';
-      document.getElementById('shareBox').style.display='block';
-      document.getElementById('myGuess').textContent=g;
-      if(j.user)document.getElementById('myGuess').insertAdjacentHTML('afterend',`<br><small>as <b>${j.user.displayName||j.user.username}</b></small>`);
+    // HIDE SPLASH NOW (before anything else)
+    sdk.actions.ready().catch(e => console.error('Ready failed', e));
+
+    // DEBUG: Force hide splash after 2s if SDK fails
+    setTimeout(() => {
+      console.log('Manually hiding splash');
+      document.dispatchEvent(new CustomEvent('farcaster-splash-hide'));
+    }, 2000);
+
+    // Existing code continues here
+    const tgtBlock = 913889;
+    document.getElementById('rnd').textContent = 190;
+    document.getElementById('tgt').textContent = tgtBlock;
+
+    async function submit() {
+      const g = +document.getElementById('guess').value;
+      if (!g || g < 1000 || g > 10000) return alert('1000-10000 only');
+      let signedMsg = null;
+      try { signedMsg = await window.FC.actions.signMessage({ message: 'predict' }); } catch {/*guest*/}
+      const res = await fetch('/api/predictions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ signedMessage: signedMsg, blockHeight: tgtBlock, guess: g }) });
+      const j = await res.json(); if (j.error) return alert(j.error);
+      document.querySelector('.prediction-input').style.display = 'none';
+      document.getElementById('shareBox').style.display = 'block';
+      document.getElementById('myGuess').textContent = g;
+      if (j.user) document.getElementById('myGuess').insertAdjacentHTML('afterend', `<br><small>as <b>${j.user.displayName || j.user.username}</b></small>`);
       fetchLeaderboard();
     }
-    async function fetchLeaderboard(){
-      const res=await fetch(`/api/predictions?type=leaderboard&blockHeight=${tgtBlock}`);
+
+    async function fetchLeaderboard() {
+      const res = await fetch(`/api/predictions?type=leaderboard&blockHeight=${tgtBlock}`);
       const { all } = await res.json();
-      const tbody=document.getElementById('lbBody');
-      if(!all||all.length===0){tbody.innerHTML='<tr><td colspan="3">No guesses yet</td></tr>';return;}
-      tbody.innerHTML=all.map((p,i)=>{
-        const status=p.diff===null?'<small style="color:#ffa">waiting for block</small>':`<small style="color:#8f8">off ${p.diff}</small>`;
-        const avatar=p.avatar?`<img src="${p.avatar}" class="ava">`:'';
-        return `<tr>
-                  <td>${i+1}</td>
-                  <td>${avatar}${p.displayName||p.username}</td>
-                  <td>${p.guess.toLocaleString()} tx<br>${status}</td>
-                </tr>`;
+      const tbody = document.getElementById('lbBody');
+      if (!all || all.length === 0) { tbody.innerHTML = '<tr><td colspan="3">No guesses yet</td></tr>'; return; }
+      tbody.innerHTML = all.map((p, i) => {
+        const status = p.diff === null ? '<small style="color:#ffa">waiting for block</small>' : `<small style="color:#8f8">off ${p.diff}</small>`;
+        const avatar = p.avatar ? `<img src="${p.avatar}" class="ava">` : '';
+        return `<tr><td>${i + 1}</td><td>${avatar}${p.displayName || p.username}</td><td>${p.guess.toLocaleString()} tx<br>${status}</td></tr>`;
       }).join('');
     }
-    window.shareResult=async(guess,block)=>{
-      const text=`I guessed ${guess} tx for BTC block #${block}!\nThink you can beat me?\n\nPlay 👉 `;
-      await FC.actions.composeText({ text: text + location.href });
+
+    window.shareResult = async (guess, block) => {
+      const text = `I guessed ${guess} tx for BTC block #${block}!\nThink you can beat me?\n\nPlay 👉 `;
+      await sdk.actions.composeText({ text: text + location.href });
     };
-    setInterval(fetchLeaderboard,30000);
+
+    setInterval(fetchLeaderboard, 30000);
+    fetchLeaderboard();
   </script>
 </body>
 </html>
