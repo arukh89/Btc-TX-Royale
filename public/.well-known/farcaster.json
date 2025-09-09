@@ -1,22 +1,17 @@
-const HUB = 'https://hub.pinata.cloud';
-export async function userFromSig(signedMsg) {
-  if (!signedMsg) return null;
-  try {
-    const r = await fetch(`${HUB}/v1/validateMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/octet-stream' },
-      body: Buffer.from(signedMsg.replace(/^0x/, ''), 'hex')
-    });
-    if (!r.ok) return null;
-    const msg = await r.json();
-    const fid = msg.data.fid;
-    const prof = await fetch(`${HUB}/v1/userDataByFid?fid=${fid}`).then(r => r.json());
-    const out = { fid };
-    prof.data?.userDataBody?.forEach(u => {
-      if (u.type === 'USER_DATA_TYPE_USERNAME') out.username = u.value;
-      if (u.type === 'USER_DATA_TYPE_DISPLAY') out.displayName = u.value;
-      if (u.type === 'USER_DATA_TYPE_PFP') out.avatar = u.value;
-    });
-    return out;
-  } catch { return null; }
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjEyNTI2LCJ0eXBlIjoiY3VzdG9keSIsImtleSI6IjB4ZDg4...",
+    "payload": "eyJkb21haW4iOiJidGMtdHgtYmF0dGxlLmxvdi5uZXRsaWZ5LmFwcCJ9",
+    "signature": "MHhkZTBhN2E1YjM4MTY0M2E2YjU5YjU5YjU5YjU5YjU5YjU5YjU5..."
+  },
+  "frame": {
+    "version": "1",
+    "name": "BTC TX Battle Royale",
+    "iconUrl": "https://btc-tx-royale.netlify.app/icon-512.png",
+    "homeUrl": "https://btc-tx-royale.netlify.app",
+    "imageUrl": "https://btc-tx-royale.netlify.app/og-3x2.png",
+    "buttonTitle": "Launch Game",
+    "splashImageUrl": "https://btc-tx-royale.netlify.app/splash-200x200.png",
+    "splashBackgroundColor": "#f7931a"
+  }
 }
