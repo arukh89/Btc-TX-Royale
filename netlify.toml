@@ -1,4 +1,5 @@
-[build]
-  publish = "public"
-  functions = "api"
-  
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "frame-ancestors https://warpcast.com https://client.warpcast.com;"
+    
