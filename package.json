@@ -1,0 +1,21 @@
+{
+  "name": "btc-tx-royale",
+  "version": "1.0.0",
+  "description": "BTC TX Battle Royale mini-app",
+  "main": "index.js",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "echo 'No build step'",
+    "start": "npx netlify dev"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@netlify/functions": "^2.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arukh89/Btc-TX-Royale"
+  },
+  "author": "",
+  "license": "MIT"
+}
