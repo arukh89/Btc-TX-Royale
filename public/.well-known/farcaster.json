@@ -1,13 +1,8 @@
 {
-  "account": {
-    "fid": 250704,
-    "type": "custody",
-    "key": "0x153657145eA2d579691a146c7Ea4CFAE37D27Fae"
-  },
   "accountAssociation": {
     "header": "eyJmaWQiOjI1MDcwNCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDE1MzY1NzE0NWVBMmQ1Nzk2OTFhMTQ2YzdFYTRDRkFFMzdEMjdGYWUifQ",
     "payload": "eyJkb21haW4iOiJidGMtdHgtcm95YWxlLm5ldGxpZnkuYXBwIn0",
-    "signature": "0x4b2c10f21a3b906e7c77c74c5b1c1c1f2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1"
+    "signature": "MHg2ZGUzMWVkNDliNjkyNmJkY2U0NDM3MjgwYjkyMGM1YjQ0NWEzNmRjYjY1Mzk2N2ZjODc3MDc4Mzk0MjA2MWNiNjAzMjAyODA3NDJkMzZiMTkyZDEzNDFlYWY1Zjg2NzYxYTk2YTVjZjg0Zjg2MzE3MzAwMThmYzhlNTY0YTk2ZDFi"
   },
   "frame": {
     "version": "1",
