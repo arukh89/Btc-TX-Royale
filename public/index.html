@@ -3,17 +3,65 @@
 <head>
   <meta charset="utf-8"/>
   <title>BTC TX Battle Royale</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://btc-tx-royale.netlify.app/og-3x2.png","button":{"title":"Launch Game","action":{"type":"launch_frame","name":"BTC TX Battle Royale","url":"https://btc-tx-royale.netlify.app","splashImageUrl":"https://btc-tx-royale.netlify.app/splash-200x200.png","splashBackgroundColor":"#f7931a"}}'/>
   <style>
-    body{font-family:system-ui;background:#111;color:#fff;text-align:center;margin:0;padding:2rem}
-    input{padding:.6rem 1rem;font-size:1.2rem;border-radius:8px;border:none;margin:.5rem 0}
-    button{padding:.6rem 1.5rem;font-size:1.2rem;border-radius:8px;border:none;background:#f7931a;color:#000;font-weight:700}
-    #shareBox{background:rgba(247,147,26,.1);border:1px solid rgba(247,147,26,.4);border-radius:12px;padding:1rem;margin-top:1rem}
-    table{width:100%;border-collapse:collapse;color:#fff;font-size:1rem;margin-top:1rem}
-    th{border-bottom:2px solid #f7931a;padding:8px}
-    td{padding:8px;border-bottom:1px solid #444}
-    .ava{width:20px;height:20px;border-radius:50%;margin-right:6px;vertical-align:middle}
+    body {
+      font-family: system-ui;
+      background: #111;
+      color: #fff;
+      text-align: center;
+      margin: 0;
+      padding: 2rem;
+    }
+    input {
+      padding: 0.6rem 1rem;
+      font-size: 1.2rem;
+      border-radius: 8px;
+      border: none;
+      margin: 0.5rem 0;
+    }
+    button {
+      padding: 0.6rem 1.5rem;
+      font-size: 1.2rem;
+      border-radius: 8px;
+      border: none;
+      background: #f7931a;
+      color: #000;
+      font-weight: 700;
+    }
+    #shareBox {
+      background: rgba(247, 147, 26, 0.1);
+      border: 1px solid rgba(247, 147, 26, 0.4);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      color: #fff;
+      font-size: 1rem;
+      margin-top: 1rem;
+    }
+    th {
+      border-bottom: 2px solid #f7931a;
+      padding: 8px;
+    }
+    td {
+      padding: 8px;
+      border-bottom: 1px solid #444;
+    }
+    .ava {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    #leaderboard-section, #predictions-section {
+      margin-top: 2rem;
+    }
   </style>
 </head>
 <body>
@@ -21,8 +69,9 @@
   <p>Round #<span id="rnd">190</span> — Target block #<span id="tgt">913889</span></p>
 
   <div class="prediction-input">
-    <input id="guess" type="number" min="1000" max="10000" placeholder="Your tx count">
-    <br><button onclick="submit()">🎯 Submit Guess</button>
+    <input id="guess" type="number" min="1" max="20000" placeholder="Your tx count (1-20000)">
+    <br>
+    <button onclick="submit()">🎯 Submit Guess</button>
   </div>
 
   <div id="shareBox" style="display:none">
@@ -30,12 +79,39 @@
     <button onclick="shareResult(document.getElementById('myGuess').textContent, tgtBlock)">📣  Share on Warpcast</button>
   </div>
 
-  <!--  NEW FULL TABLE  -->
-  <div style="margin-top:1.5rem">
-    <h3 style="color:#f7931a">🏆  Live Leaderboard</h3>
+  <!-- Leaderboard Section -->
+  <div id="leaderboard-section">
+    <h3 style="color: #f7931a">🏆  Live Leaderboard</h3>
     <table id="lbTable">
-      <thead><tr><th>#</th><th>Player</th><th>Guess</th></tr></thead>
-      <tbody id="lbBody"><tr><td colspan="3">Loading…</td></tbody>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Player</th>
+          <th>Players Predictions</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="lbBody">
+        <tr><td colspan="4">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Player Predictions Section -->
+  <div id="predictions-section">
+    <h3 style="color: #f7931a">💬  Recent Predictions</h3>
+    <table id="predTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Player</th>
+          <th>Prediction</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody id="predBody">
+        <tr><td colspan="4">Loading…</td></tr>
+      </tbody>
     </table>
   </div>
 
@@ -53,44 +129,110 @@
       document.dispatchEvent(new CustomEvent('farcaster-splash-hide'));
     }, 2000);
 
-    // Existing code continues here
+    // Initialize variables
     const tgtBlock = 913889;
     document.getElementById('rnd').textContent = 190;
     document.getElementById('tgt').textContent = tgtBlock;
 
+    // Function to submit a guess
     async function submit() {
-      const g = +document.getElementById('guess').value;
-      if (!g || g < 1000 || g > 10000) return alert('1000-10000 only');
+      const guessInput = document.getElementById('guess');
+      const g = +guessInput.value;
+      if (!g || g < 1 || g > 20000) return alert('Guess must be between 1 and 20000');
+
       let signedMsg = null;
-      try { signedMsg = await window.FC.actions.signMessage({ message: 'predict' }); } catch {/*guest*/}
-      const res = await fetch('/api/predictions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ signedMessage: signedMsg, blockHeight: tgtBlock, guess: g }) });
-      const j = await res.json(); if (j.error) return alert(j.error);
+      try {
+        signedMsg = await window.FC.actions.signMessage({ message: 'predict' });
+      } catch (e) {
+        console.error('Signing message failed', e);
+      }
+
+      const res = await fetch('/api/predictions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signedMessage: signedMsg, blockHeight: tgtBlock, guess: g }),
+      });
+
+      const json = await res.json();
+      if (json.error) return alert(json.error);
+
+      // Update UI after successful submission
       document.querySelector('.prediction-input').style.display = 'none';
       document.getElementById('shareBox').style.display = 'block';
       document.getElementById('myGuess').textContent = g;
-      if (j.user) document.getElementById('myGuess').insertAdjacentHTML('afterend', `<br><small>as <b>${j.user.displayName || j.user.username}</b></small>`);
-      await fetchLeaderboard(); // Ensure leaderboard updates after submission
+
+      if (json.user) {
+        document.getElementById('myGuess').insertAdjacentHTML(
+          'afterend',
+          `<br><small>as <b>${json.user.displayName || json.user.username}</b></small>`
+        );
+      }
+
+      // Update both leaderboard and recent predictions
+      await fetchLeaderboard();
+      await fetchRecentPredictions();
     }
 
+    // Function to fetch and display the leaderboard
     async function fetchLeaderboard() {
       const res = await fetch(`/api/predictions?type=leaderboard&blockHeight=${tgtBlock}`);
       const { all } = await res.json();
       const tbody = document.getElementById('lbBody');
-      if (!all || all.length === 0) { tbody.innerHTML = '<tr><td colspan="3">No guesses yet</td></tr>'; return; }
+
+      if (!all || all.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">No guesses yet</td></tr>';
+        return;
+      }
+
       tbody.innerHTML = all.map((p, i) => {
         const status = p.diff === null ? '<small style="color:#ffa">waiting for block</small>' : `<small style="color:#8f8">off ${p.diff}</small>`;
         const avatar = p.avatar ? `<img src="${p.avatar}" class="ava">` : '';
-        return `<tr><td>${i + 1}</td><td>${avatar}${p.displayName || p.username}</td><td>${p.guess.toLocaleString()} tx<br>${status}</td></tr>`;
+        return `<tr>
+          <td>${i + 1}</td>
+          <td>${avatar}${p.displayName || p.username}</td>
+          <td>${p.guess.toLocaleString()}</td>
+          <td>${status}</td>
+        </tr>`;
       }).join('');
     }
 
+    // Function to fetch and display recent predictions
+    async function fetchRecentPredictions() {
+      const res = await fetch(`/api/predictions?type=recent&blockHeight=${tgtBlock}`);
+      const { predictions } = await res.json();
+      const tbody = document.getElementById('predBody');
+
+      if (!predictions || predictions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">No recent predictions</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = predictions.map((p, i) => {
+        const avatar = p.avatar ? `<img src="${p.avatar}" class="ava">` : '';
+        return `<tr>
+          <td>${i + 1}</td>
+          <td>${avatar}${p.displayName || p.username}</td>
+          <td>${p.guess.toLocaleString()}</td>
+          <td>${new Date().toLocaleTimeString()}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Function to share the result on Warpcast
     window.shareResult = async (guess, block) => {
       const text = `I guessed ${guess} tx for BTC block #${block}!\nThink you can beat me?\n\nPlay 👉 https://btc-tx-royale.netlify.app`;
       await sdk.actions.composeText({ text });
     };
 
-    setInterval(fetchLeaderboard, 30000);
+    // Update both leaderboard and recent predictions every 30 seconds
+    setInterval(async () => {
+      await fetchLeaderboard();
+      await fetchRecentPredictions();
+    }, 30000);
+
+    // Initial fetch to populate data
     fetchLeaderboard();
+    fetchRecentPredictions();
   </script>
 </body>
 </html>
