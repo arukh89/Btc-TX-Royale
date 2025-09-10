@@ -1,5 +1,14 @@
+# netlify.toml  –  copy-paste exactly, commit, push, forget
+[build]
+  publish = "public"
+  functions = "api"
+
+[functions]
+  node_bundler = "esbuild"   # keeps v1 syntax you already wrote
+
 [[headers]]
   for = "/*"
   [headers.values]
     Content-Security-Policy = "frame-ancestors https://warpcast.com https://client.warpcast.com;"
+    X-Frame-Options = "DENY"
     
