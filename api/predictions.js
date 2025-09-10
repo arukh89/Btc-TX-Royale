@@ -3,9 +3,17 @@ import { userFromSig } from './farcaster-user.js';
 export default async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
+  if (req.method === 'POST') {
+    const { signedMessage, guess, username, fid } = await req.json();
+    const user = await userFromSig(signedMessage) || { fid, username };
+    const key = `${user.fid}-${tgtBlock}`;
+    if (guesses.has(key)) return res.status(400).json({ error: 'already guessed' });
+    guesses.set(key, { ...user, guess, diff: null });
+    return res.json({ success: true, user });
+  }
+
   if (req.method === 'GET') {
     try {
-      // Fetch all predictions from your database
       const predictions = await fetchAllPredictions();
       return res.json({ success: true, predictions });
     } catch (error) {
