@@ -13,22 +13,22 @@
       margin: 0;
       padding: 2rem;
     }
-    .user-list {
+    .predictions-list {
       margin-top: 2rem;
       text-align: left;
     }
-    .user-list table {
+    .predictions-list table {
       width: 100%;
       border-collapse: collapse;
     }
-    .user-list th, .user-list td {
+    .predictions-list th, .predictions-list td {
       padding: 10px;
       border-bottom: 1px solid #444;
     }
-    .user-list th {
+    .predictions-list th {
       color: #f7931a;
     }
-    .user-list img {
+    .predictions-list img {
       width: 30px;
       height: 30px;
       border-radius: 50%;
@@ -50,18 +50,19 @@
     <button onclick="shareResult()">📣  Share on Warpcast</button>
   </div>
 
-  <div class="user-list">
-    <h3 style="color:#f7931a">Players Who Joined</h3>
-    <table id="userTable">
+  <div class="predictions-list">
+    <h3 style="color:#f7931a">All Predictions</h3>
+    <table id="predictionsTable">
       <thead>
         <tr>
           <th>Avatar</th>
           <th>FID</th>
           <th>Username</th>
+          <th>Guess</th>
         </tr>
       </thead>
-      <tbody id="userBody">
-        <tr><td colspan="3">Loading…</td></tr>
+      <tbody id="predictionsBody">
+        <tr><td colspan="4">Loading…</td></tr>
       </tbody>
     </table>
   </div>
@@ -101,30 +102,17 @@
       if (j.user?.displayName || j.user?.username) {
         document.getElementById('myGuess').insertAdjacentHTML('afterend', `<br><small>as <b>${j.user.displayName || j.user.username}</b></small>`);
       }
-      fetchLeaderboard();
-      fetchUsers();
+      fetchPredictions();
     }
 
-    async function fetchLeaderboard() {
-      const res = await fetch(`/api/predictions?type=leaderboard&blockHeight=${tgtBlock}`);
-      const { all } = await res.json();
-      const tbody = document.getElementById('lbBody');
-      if (!all || all.length === 0) { tbody.innerHTML = '<tr><td colspan="3">No guesses yet</td></tr>'; return; }
-      tbody.innerHTML = all.map((p, i) => {
-        const status = p.diff === null ? '<small style="color:#ffa">waiting for block</small>' : `<small style="color:#8f8">off ${p.diff}</small>`;
-        const avatar = p.avatar ? `<img src="${p.avatar}" class="ava">` : '';
-        return `<tr><td>${i + 1}</td><td>${avatar}${p.displayName || p.username}</td><td>${p.guess.toLocaleString()} tx<br>${status}</td></tr>`;
-      }).join('');
-    }
-
-    async function fetchUsers() {
-      const res = await fetch('/api/users');
-      const { users } = await res.json();
-      const tbody = document.getElementById('userBody');
-      if (!users || users.length === 0) { tbody.innerHTML = '<tr><td colspan="3">No players yet</td></tr>'; return; }
-      tbody.innerHTML = users.map(user => {
-        const avatar = user.avatar ? `<img src="${user.avatar}" alt="${user.username}">` : '';
-        return `<tr><td>${avatar}</td><td>${user.fid}</td><td>@${user.username}</td></tr>`;
+    async function fetchPredictions() {
+      const res = await fetch('/api/predictions');
+      const { predictions } = await res.json();
+      const tbody = document.getElementById('predictionsBody');
+      if (!predictions || predictions.length === 0) { tbody.innerHTML = '<tr><td colspan="4">No predictions yet</td></tr>'; return; }
+      tbody.innerHTML = predictions.map(pred => {
+        const avatar = pred.avatar ? `<img src="${pred.avatar}" alt="${pred.username}">` : '';
+        return `<tr><td>${avatar}</td><td>${pred.fid}</td><td>@${pred.username}</td><td>${pred.guess.toLocaleString()}</td></tr>`;
       }).join('');
     }
 
@@ -134,10 +122,8 @@
       await sdk.actions.composeText({ text });
     };
 
-    setInterval(fetchLeaderboard, 30000);
-    setInterval(fetchUsers, 30000);
-    fetchLeaderboard();
-    fetchUsers();
+    setInterval(fetchPredictions, 30000);
+    fetchPredictions();
   </script>
 </body>
 </html>
