@@ -1,19 +1,39 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BTC TX Battle Royale</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://btc-tx-royale.netlify.app/og-3x2.png","button":{"title":"Launch Game","action":{"type":"launch_frame","name":"BTC TX Battle Royale","url":"https://btc-tx-royale.netlify.app","splashImageUrl":"https://btc-tx-royale.netlify.app/splash-200x200.png","splashBackgroundColor":"#f7931a"}}}'/>
   <style>
-    body{font-family:system-ui;background:#111;color:#fff;text-align:center;margin:0;padding:2rem}
-    input{padding:.6rem 1rem;font-size:1.2rem;border-radius:8px;border:none;margin:.5rem 0}
-    button{padding:.6rem 1.5rem;font-size:1.2rem;border-radius:8px;border:none;background:#f7931a;color:#000;font-weight:700}
-    #shareBox{background:rgba(247,147,26,.1);border:1px solid rgba(247,147,26,.4);border-radius:12px;padding:1rem;margin-top:1rem}
-    table{width:100%;border-collapse:collapse;color:#fff;font-size:1rem;margin-top:1rem}
-    th{border-bottom:2px solid #f7931a;padding:8px}
-    td{padding:8px;border-bottom:1px solid #444}
-    .ava{width:20px;height:20px;border-radius:50%;margin-right:6px;vertical-align:middle}
+    body {
+      font-family: system-ui;
+      background: #111;
+      color: #fff;
+      text-align: center;
+      margin: 0;
+      padding: 2rem;
+    }
+    .user-list {
+      margin-top: 2rem;
+      text-align: left;
+    }
+    .user-list table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .user-list th, .user-list td {
+      padding: 10px;
+      border-bottom: 1px solid #444;
+    }
+    .user-list th {
+      color: #f7931a;
+    }
+    .user-list img {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      vertical-align: middle;
+    }
   </style>
 </head>
 <body>
@@ -30,11 +50,19 @@
     <button onclick="shareResult()">📣  Share on Warpcast</button>
   </div>
 
-  <div style="margin-top:1.5rem">
-    <h3 style="color:#f7931a">🏆  Live Leaderboard</h3>
-    <table id="lbTable">
-      <thead><tr><th>#</th><th>Player</th><th>Guess</th></tr></thead>
-      <tbody id="lbBody"><tr><td colspan="3">Loading…</td></tbody>
+  <div class="user-list">
+    <h3 style="color:#f7931a">Players Who Joined</h3>
+    <table id="userTable">
+      <thead>
+        <tr>
+          <th>Avatar</th>
+          <th>FID</th>
+          <th>Username</th>
+        </tr>
+      </thead>
+      <tbody id="userBody">
+        <tr><td colspan="3">Loading…</td></tr>
+      </tbody>
     </table>
   </div>
 
@@ -42,10 +70,8 @@
     import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk@0.1.10';
     window.FC = sdk;
 
-    // 1️⃣  tell the host we’re alive
-    sdk.actions.ready().catch(e => console.error('ready failed', e));
-
-    // 2️⃣  safety fallback after 2 s
+    // Hide splash screen
+    sdk.actions.ready().catch(e => console.error('Ready failed', e));
     setTimeout(() => document.dispatchEvent(new CustomEvent('farcaster-splash-hide')), 2000);
 
     const tgtBlock = 913889;
@@ -76,6 +102,7 @@
         document.getElementById('myGuess').insertAdjacentHTML('afterend', `<br><small>as <b>${j.user.displayName || j.user.username}</b></small>`);
       }
       fetchLeaderboard();
+      fetchUsers();
     }
 
     async function fetchLeaderboard() {
@@ -90,6 +117,17 @@
       }).join('');
     }
 
+    async function fetchUsers() {
+      const res = await fetch('/api/users');
+      const { users } = await res.json();
+      const tbody = document.getElementById('userBody');
+      if (!users || users.length === 0) { tbody.innerHTML = '<tr><td colspan="3">No players yet</td></tr>'; return; }
+      tbody.innerHTML = users.map(user => {
+        const avatar = user.avatar ? `<img src="${user.avatar}" alt="${user.username}">` : '';
+        return `<tr><td>${avatar}</td><td>${user.fid}</td><td>@${user.username}</td></tr>`;
+      }).join('');
+    }
+
     window.shareResult = async () => {
       const guess = document.getElementById('myGuess').textContent;
       const text = `I guessed ${guess} tx for BTC block #${tgtBlock}!\nThink you can beat me?\n\nPlay 👉 https://btc-tx-royale.netlify.app`;
@@ -97,7 +135,9 @@
     };
 
     setInterval(fetchLeaderboard, 30000);
+    setInterval(fetchUsers, 30000);
     fetchLeaderboard();
+    fetchUsers();
   </script>
 </body>
 </html>
