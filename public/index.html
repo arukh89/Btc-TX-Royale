@@ -13,6 +13,9 @@
       margin: 0;
       padding: 2rem;
     }
+    .prediction-input {
+      margin-bottom: 1rem;
+    }
     .predictions-list {
       margin-top: 2rem;
       text-align: left;
@@ -41,6 +44,7 @@
   <p>Round #<span id="rnd">190</span> — Target block #<span id="tgt">913889</span></p>
 
   <div class="prediction-input">
+    <input id="fcUsername" type="text" placeholder="Your FC Username">
     <input id="guess" type="number" min="1000" max="10000" placeholder="Your tx count">
     <br><button onclick="submit()">🎯 Submit Guess</button>
   </div>
@@ -80,29 +84,63 @@
     document.getElementById('tgt').textContent = tgtBlock;
 
     async function submit() {
-      const g = +document.getElementById('guess').value;
-      if (!g || g < 1000 || g > 10000) return alert('1000-10000 only');
-      let signedMsg = null;
+      const username = document.getElementById('fcUsername').value.trim();
+      if (!username) return alert('Please enter your FC username');
+
       try {
-        await window.FC.context;
-        signedMsg = await window.FC.actions.signMessage({ message: 'predict' });
-      } catch (e) { console.warn('sign cancelled', e); }
+        // Fetch user data by username
+        const user = await fetchUserByUsername(username);
+        if (!user) return alert('User not found');
 
-      const res = await fetch('/api/predictions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ signedMessage: signedMsg, blockHeight: tgtBlock, guess: g })
-      });
-      const j = await res.json();
-      if (j.error) return alert(j.error);
+        const g = +document.getElementById('guess').value;
+        if (!g || g < 1000 || g > 10000) return alert('1000-10000 only');
 
-      document.querySelector('.prediction-input').style.display = 'none';
-      document.getElementById('shareBox').style.display = 'block';
-      document.getElementById('myGuess').textContent = g;
-      if (j.user?.displayName || j.user?.username) {
-        document.getElementById('myGuess').insertAdjacentHTML('afterend', `<br><small>as <b>${j.user.displayName || j.user.username}</b></small>`);
+        let signedMsg = null;
+        try {
+          await window.FC.context;
+          signedMsg = await window.FC.actions.signMessage({ message: 'predict' });
+        } catch (e) { console.warn('sign cancelled', e); }
+
+        const res = await fetch('/api/predictions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ signedMessage: signedMsg, blockHeight: tgtBlock, guess: g, username: user.username, fid: user.fid })
+        });
+        const j = await res.json();
+        if (j.error) return alert(j.error);
+
+        document.querySelector('.prediction-input').style.display = 'none';
+        document.getElementById('shareBox').style.display = 'block';
+        document.getElementById('myGuess').textContent = g;
+        if (j.user?.displayName || j.user?.username) {
+          document.getElementById('myGuess').insertAdjacentHTML('afterend', `<br><small>as <b>${j.user.displayName || j.user.username}</b></small>`);
+        }
+        fetchPredictions();
+      } catch (error) {
+        console.error('Error submitting guess:', error);
+        alert('Failed to submit guess. Please try again.');
       }
-      fetchPredictions();
+    }
+
+    async function fetchUserByUsername(username) {
+      try {
+        // Use the Neynar API to fetch user by username
+        const neynarApiKey = 'DIA557C9-F55E-42F3-8987-0F2CA80DD4E';
+        const neynarClientId = '30719794-4961-4a3a-9aeb-c0e33086a64e';
+        const response = await fetch(`https://snapchain-api.neynar.com/v1/users?username=${encodeURIComponent(username)}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': neynarApiKey,
+            'x-client-id': neynarClientId,
+          },
+        });
+        const data = await response.json();
+        if (!data.users || data.users.length === 0) return null;
+        return data.users[0];
+      } catch (error) {
+        console.error('Error fetching user by username:', error);
+        return null;
+      }
     }
 
     async function fetchPredictions() {
