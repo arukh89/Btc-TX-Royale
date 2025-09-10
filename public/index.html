@@ -4,6 +4,7 @@
   <meta charset="utf-8"/>
   <title>BTC TX Battle Royale</title>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <!-- Corrected and complete fc:miniapp meta tag with explicit button object -->
   <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://btc-tx-royale.netlify.app/og-3x2.png","button":{"title":"Launch Game","action":{"type":"launch_frame","name":"BTC TX Battle Royale","url":"https://btc-tx-royale.netlify.app","splashImageUrl":"https://btc-tx-royale.netlify.app/splash-200x200.png","splashBackgroundColor":"#f7931a"}}'/>
   <style>
     body{font-family:system-ui;background:#111;color:#fff;text-align:center;margin:0;padding:2rem}
@@ -84,7 +85,6 @@
       }).join('');
     }
 
-    // Correct position of shareResult function
     window.shareResult = async (guess, block) => {
       const text = `I guessed ${guess} tx for BTC block #${block}!\nThink you can beat me?\n\nPlay 👉 https://btc-tx-royale.netlify.app`;
       await sdk.actions.composeText({ text });
