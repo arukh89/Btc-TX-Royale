@@ -42,6 +42,12 @@
     import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk@0.1.10';
     window.FC = sdk;
 
+    // 1️⃣  tell the host we’re alive
+    sdk.actions.ready().catch(e => console.error('ready failed', e));
+
+    // 2️⃣  safety fallback after 2 s
+    setTimeout(() => document.dispatchEvent(new CustomEvent('farcaster-splash-hide')), 2000);
+
     const tgtBlock = 913889;
     document.getElementById('rnd').textContent = 190;
     document.getElementById('tgt').textContent = tgtBlock;
