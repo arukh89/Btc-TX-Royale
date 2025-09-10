@@ -4,8 +4,7 @@
   <meta charset="utf-8"/>
   <title>BTC TX Battle Royale</title>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <!-- Corrected and complete fc:miniapp meta tag with explicit button object -->
-  <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://btc-tx-royale.netlify.app/og-3x2.png","button":{"title":"Launch Game","action":{"type":"launch_frame","name":"BTC TX Battle Royale","url":"https://btc-tx-royale.netlify.app","splashImageUrl":"https://btc-tx-royale.netlify.app/splash-200x200.png","splashBackgroundColor":"#f7931a"}}'/>
+  <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://btc-tx-royale.netlify.app/og-3x2.png","button":{"title":"Launch Game","action":{"type":"launch_frame","name":"BTC TX Battle Royale","url":"https://btc-tx-royale.netlify.app","splashImageUrl":"https://btc-tx-royale.netlify.app/splash-200x200.png","splashBackgroundColor":"#f7931a"}}}'/>
   <style>
     body{font-family:system-ui;background:#111;color:#fff;text-align:center;margin:0;padding:2rem}
     input{padding:.6rem 1rem;font-size:1.2rem;border-radius:8px;border:none;margin:.5rem 0}
@@ -28,10 +27,9 @@
 
   <div id="shareBox" style="display:none">
     <p>✅  Your guess <strong id="myGuess"></strong> is locked in!</p>
-    <button onclick="shareResult(document.getElementById('myGuess').textContent, tgtBlock)">📣  Share on Warpcast</button>
+    <button onclick="shareResult()">📣  Share on Warpcast</button>
   </div>
 
-  <!--  NEW FULL TABLE  -->
   <div style="margin-top:1.5rem">
     <h3 style="color:#f7931a">🏆  Live Leaderboard</h3>
     <table id="lbTable">
@@ -41,20 +39,9 @@
   </div>
 
   <script type="module">
-    // Import SDK FIRST
     import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk@0.1.10';
     window.FC = sdk;
 
-    // HIDE SPLASH NOW (before anything else)
-    sdk.actions.ready().catch(e => console.error('Ready failed', e));
-
-    // DEBUG: Force hide splash after 2s if SDK fails
-    setTimeout(() => {
-      console.log('Manually hiding splash');
-      document.dispatchEvent(new CustomEvent('farcaster-splash-hide'));
-    }, 2000);
-
-    // Existing code continues here
     const tgtBlock = 913889;
     document.getElementById('rnd').textContent = 190;
     document.getElementById('tgt').textContent = tgtBlock;
@@ -63,13 +50,25 @@
       const g = +document.getElementById('guess').value;
       if (!g || g < 1000 || g > 10000) return alert('1000-10000 only');
       let signedMsg = null;
-      try { signedMsg = await window.FC.actions.signMessage({ message: 'predict' }); } catch {/*guest*/}
-      const res = await fetch('/api/predictions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ signedMessage: signedMsg, blockHeight: tgtBlock, guess: g }) });
-      const j = await res.json(); if (j.error) return alert(j.error);
+      try {
+        await window.FC.context;
+        signedMsg = await window.FC.actions.signMessage({ message: 'predict' });
+      } catch (e) { console.warn('sign cancelled', e); }
+
+      const res = await fetch('/api/predictions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signedMessage: signedMsg, blockHeight: tgtBlock, guess: g })
+      });
+      const j = await res.json();
+      if (j.error) return alert(j.error);
+
       document.querySelector('.prediction-input').style.display = 'none';
       document.getElementById('shareBox').style.display = 'block';
       document.getElementById('myGuess').textContent = g;
-      if (j.user) document.getElementById('myGuess').insertAdjacentHTML('afterend', `<br><small>as <b>${j.user.displayName || j.user.username}</b></small>`);
+      if (j.user?.displayName || j.user?.username) {
+        document.getElementById('myGuess').insertAdjacentHTML('afterend', `<br><small>as <b>${j.user.displayName || j.user.username}</b></small>`);
+      }
       fetchLeaderboard();
     }
 
@@ -85,8 +84,9 @@
       }).join('');
     }
 
-    window.shareResult = async (guess, block) => {
-      const text = `I guessed ${guess} tx for BTC block #${block}!\nThink you can beat me?\n\nPlay 👉 https://btc-tx-royale.netlify.app`;
+    window.shareResult = async () => {
+      const guess = document.getElementById('myGuess').textContent;
+      const text = `I guessed ${guess} tx for BTC block #${tgtBlock}!\nThink you can beat me?\n\nPlay 👉 https://btc-tx-royale.netlify.app`;
       await sdk.actions.composeText({ text });
     };
 
